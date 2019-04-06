@@ -1,4 +1,4 @@
-# DSC672FinalProject
+# DSC-672 Final Project
 
 --------------------
 
