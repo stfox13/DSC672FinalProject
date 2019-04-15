@@ -4,10 +4,12 @@
 
 #### load libraries ####
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(RCurl, ggplot2, RColorBrewer, dplyr, plyr, lubridate, ggridges)
+pacman::p_load(RCurl, ggplot2, RColorBrewer, dplyr, plyr, lubridate, ggridges, scales, magrittr, qwraps2)
 
 # declare output directory 
 output <- "C:\\Users\\sidne\\Documents\\Notes\\2015contest_CSV\\" # local reference
+
+options(qwraps2_markup = "markdown")
 
 #### Load / create dataframes ####
 # load cleaned consumption data as df
@@ -54,6 +56,137 @@ consumption_elect_mean_sectoronly_df <- as.data.frame(
         MinElectricity_KW_SQFT=as.numeric(min(Electricity_KW_SQFT)),
         Mean_Solar_Elevation=as.numeric(mean(Solar_Elevation)))
 )
+
+# check to see if there are nulls:
+for (i in names(consumption_df)[2:24]){
+  null_count <- paste("Null value count - ", i, " column: ", sum(is.na(consumption_df$i)), sep="")
+  print(null_count)
+}
+
+# build summary table
+consumption_df_summary <- 
+  list("Electricity per SQFT" =
+        list("min" = ~min(.data$Electricity_KW_SQFT),
+              "max" = ~max(.data$Electricity_KW_SQFT),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Electricity_KW_SQFT)),
+       "Solar Elevation" = 
+        list("min" = ~min(.data$Solar_Elevation),
+              "max" = ~max(.data$Solar_Elevation),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Solar_Elevation)),
+       "Cloud Cover Fraction" = 
+         list("min" = ~min(.data$Cloud_Cover_Fraction),
+              "max" = ~max(.data$Cloud_Cover_Fraction),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Cloud_Cover_Fraction)),
+       "Dew Point" = 
+         list("min" = ~min(.data$Dew_Point),
+              "max" = ~max(.data$Dew_Point),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Dew_Point)),
+       "Humidity Fraction" = 
+         list("min" = ~min(.data$Humidity_Fraction),
+              "max" = ~max(.data$Humidity_Fraction),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Humidity_Fraction)),
+       "Precipitable Water" = 
+         list("min" = ~min(.data$Precipitable_Water),
+              "max" = ~max(.data$Precipitable_Water),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Precipitable_Water)),
+       "Temperature" = 
+         list("min" = ~min(.data$Temperature),
+              "max" = ~max(.data$Temperature),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Temperature)),
+       "Visibility" = 
+         list("min" = ~min(.data$Visibility),
+              "max" = ~max(.data$Visibility),
+              "mean (sd)" = ~ qwraps2::mean_sd(.data$Visibility))
+  )
+
+base_summary <- summary_table(consumption_df, consumption_df_summary)
+by_sector_summary <- summary_table(dplyr::group_by(consumption_df, Sector), consumption_df_summary)
+by_month_summary <- summary_table(dplyr::group_by(consumption_df, Month), consumption_df_summary)
+by_hour_summary <- summary_table(dplyr::group_by(consumption_df, Hour), consumption_df_summary)
+by_Weekday_summary <- summary_table(dplyr::group_by(consumption_df, Weekdays), consumption_df_summary)
+
+#### Distributions by continuous variable ####
+# look at distributions of each continuous variable independently (histogram / density plot)
+
+# Histogram - Electricity_KW_SQFT
+h1 <- ggplot(consumption_df, aes(x=Electricity_KW_SQFT)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins=25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 25000, 5000), limits = c(0,25000), label=comma) +
+  scale_x_continuous("Electricity per SQFT", breaks = seq(0, 0.025, 0.005), limits = c(0,0.025)) +
+  ggtitle("Histogram - Distribution of Values\nElectricity per SQFT") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Solar_Elevation
+h2 <- ggplot(consumption_df, aes(x=Solar_Elevation)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins=25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 6500, 500), limits = c(0,6500), label=comma) +
+  scale_x_continuous("Solar Elevation", breaks = seq(-100, 100, 20), limits = c(-100,100)) +
+  ggtitle("Histogram - Distribution of Values\nSolar Elevation") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Cloud_Cover_Fraction
+h3 <- ggplot(consumption_df, aes(x=Cloud_Cover_Fraction)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 35000, 5000), limits = c(0,35000), label=comma) +
+  scale_x_continuous("Cloud Cover Fraction", breaks = seq(0, 1.5, 0.1), limits = c(0,1.5)) +
+  ggtitle("Histogram - Distribution of Values\nCloud Cover Fraction") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Dew_Point
+h4 <- ggplot(consumption_df, aes(x=Dew_Point)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 9000, 1000), limits = c(0,9000), label=comma) +
+  scale_x_continuous("Dew Point", breaks = seq(-40, 40, 10), limits = c(-40,40)) +
+  ggtitle("Histogram - Distribution of Values\nDew Point") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Humidity_Fraction
+h5 <- ggplot(consumption_df, aes(x=Humidity_Fraction)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 9000, 1000), limits = c(0,9000), label=comma) +
+  scale_x_continuous("Humidity Fraction", breaks = seq(0, 1, 0.1), limits = c(0,1)) +
+  ggtitle("Histogram - Distribution of Values\nHumidity Fraction") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Precipitable_Water
+h6 <- ggplot(consumption_df, aes(x=Precipitable_Water)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 9000, 1000), limits = c(0,9000), label=comma) +
+  scale_x_continuous("Precipitable Water", breaks = seq(0, 50, 5), limits = c(0,50)) +
+  ggtitle("Histogram - Distribution of Values\nPrecipitable Water") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Temperature
+h7 <- ggplot(consumption_df, aes(x=Temperature)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 25) +
+  geom_density(alpha=.2, fill="#FF6666") +
+  scale_y_continuous("Count", breaks = seq(0, 8000, 1000), limits = c(0,8000), label=comma) +
+  scale_x_continuous("Temperature", breaks = seq(-40,40, 10), limits = c(-40,40)) +
+  ggtitle("Histogram - Distribution of Values\nTemperature") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
+
+# Histogram - Visibility
+h8 <- ggplot(consumption_df, aes(x=Visibility)) + 
+  geom_histogram(color="black", fill="#74a9cf", bins = 15) +
+  geom_density(alpha=.2, fill="#FF6666") + 
+  scale_y_continuous("Count", breaks = seq(0, 21000, 1500), limits = c(0,21000), label=comma) +
+  scale_x_continuous("Visibility", breaks = seq(0,35, 5), limits = c(0,35)) +
+  ggtitle("Histogram - Distribution of Values\nVisibility") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), panel.grid.major = element_line(colour = "#E8E8E8"), axis.line = element_line(colour = "black"))
 
 #### Faceted Graphs ####
 
@@ -280,7 +413,110 @@ c20 <- ggplot(data = consumption_df[consumption_df$Sector=='GROCERY',],
   theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) + 
   ggtitle("Violin Plot of Electricity (KW per SQFT) By Hour\nGrocery Sector")
 
+#### Box Plots: Electricity Consumption by Weekday ####
+# force the order of Weekdays
+weekday_list <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+# RESIDENTIAL
+c21 <- ggplot(data = consumption_df[consumption_df$Sector=='RESIDENTIAL',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0025), breaks=seq(0,0.0025, 0.0005)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nResidential Sector")
+
+# K - 12 SCHOOLS
+c22 <- ggplot(data = consumption_df[consumption_df$Sector=='K12_SCHOOLS',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0050), breaks=seq(0,0.0050, 0.001)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nK-12 Schools Sector")
+
+# Lodging
+c23 <- ggplot(data = consumption_df[consumption_df$Sector=='LODGING',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0035), breaks=seq(0,0.0035, 0.0005)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nLodging Sector")
+
+# STAND_ALONE_RETAIL
+c24 <- ggplot(data = consumption_df[consumption_df$Sector=='STAND_ALONE_RETAIL',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0055), breaks=seq(0,0.0055, 0.0005)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nStand Alone Retail Sector")
+
+# HEALTH_CARE
+c25 <- ggplot(data = consumption_df[consumption_df$Sector=='HEALTH_CARE',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0065), breaks=seq(0,0.0065, 0.0005)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nHealth Care Sector")
+
+# OFFICE
+c26 <- ggplot(data = consumption_df[consumption_df$Sector=='OFFICE',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.0065), breaks=seq(0,0.0065, 0.0005)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nOffice Sector")
+
+# FOOD_SERVICE
+c27 <- ggplot(data = consumption_df[consumption_df$Sector=='FOOD_SERVICE',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.016), breaks=seq(0,0.016, 0.002)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nFood Service Sector")
+
+# GROCERY
+c28 <- ggplot(data = consumption_df[consumption_df$Sector=='GROCERY',], 
+       aes(x=Weekdays, y=Electricity_KW_SQFT, fill=Weekdays)) +
+  geom_boxplot(notch = TRUE, outlier.colour="hotpink") +
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4) +
+  scale_x_discrete(limits=weekday_list) +
+  scale_y_continuous("Electricity (KW per SQFT)", limits=c(0,0.010), breaks=seq(0,0.010, 0.002)) +
+  scale_fill_brewer(palette="Paired") +
+  theme_minimal() + 
+  theme(panel.grid.minor=element_blank(), legend.position = "none", axis.line = element_line(colour = "black")) +
+  ggtitle("Notched Box Plot of Electricity (KW per SQFT) By Weekday\nGrocery Sector")
+
 #### Output files ####
+
+# charts 
+
 outputfile <- paste(output, "c1.jpg", sep = "")
 print(c1)
 ggsave(outputfile, width = 12, height = 8, dpi = 300)
@@ -359,4 +595,70 @@ ggsave(outputfile, width = 12, height = 8, dpi = 300)
 
 outputfile <- paste(output, "c20.jpg", sep = "")
 print(c20)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c21.jpg", sep = "")
+print(c21)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c22.jpg", sep = "")
+print(c22)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c23.jpg", sep = "")
+print(c23)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c24.jpg", sep = "")
+print(c24)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c25.jpg", sep = "")
+print(c25)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c26.jpg", sep = "")
+print(c26)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c27.jpg", sep = "")
+print(c27)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "c28.jpg", sep = "")
+print(c28)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+# histograms
+
+outputfile <- paste(output, "h1.jpg", sep = "")
+print(h1)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h2.jpg", sep = "")
+print(h2)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h3.jpg", sep = "")
+print(h3)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h4.jpg", sep = "")
+print(h4)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h5.jpg", sep = "")
+print(h5)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h6.jpg", sep = "")
+print(h6)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h7.jpg", sep = "")
+print(h7)
+ggsave(outputfile, width = 12, height = 8, dpi = 300)
+
+outputfile <- paste(output, "h8.jpg", sep = "")
+print(h8)
 ggsave(outputfile, width = 12, height = 8, dpi = 300)
