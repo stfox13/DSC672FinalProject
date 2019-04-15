@@ -1,5 +1,6 @@
 # Exploratory Data Analysis (EDA) Images
-#### Images produced during EDA
+#### EDA Overview: Summary Statistics
+# -----------
 |                         |consumption_df (N = 70,072) |
 |:------------------------|:---------------------------|
 |**Electricity per SQFT** |&nbsp;&nbsp;                |
