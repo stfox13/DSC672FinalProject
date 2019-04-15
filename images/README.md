@@ -36,7 +36,11 @@
 |&nbsp;&nbsp; max         |32.2                        |
 |&nbsp;&nbsp; mean (sd)   |14.38 &plusmn; 6.92         |
 
+---
 
+#### EDA Overview: Summary Statistics by Sector
+
+---
 
 |                         |Sector: FOOD_SERVICE (N = 8,759) |Sector: GROCERY (N = 8,759) |Sector: HEALTH_CARE (N = 8,759) |Sector: K12_SCHOOLS (N = 8,759) |Sector: LODGING (N = 8,759) |Sector: OFFICE (N = 8,759) |Sector: RESIDENTIAL (N = 8,759) |Sector: STAND_ALONE_RETAIL (N = 8,759) |
 |:------------------------|:--------------------------------|:---------------------------|:-------------------------------|:-------------------------------|:---------------------------|:--------------------------|:-------------------------------|:--------------------------------------|
